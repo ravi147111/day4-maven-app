@@ -2,7 +2,8 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = "day5-maven-app"
+        IMAGE_NAME = "raviannavarapu/day6-maven-app"
+        DOCKER_CREDS = credentials('dockerhub-creds')
     }
 
     stages {
@@ -24,12 +25,17 @@ pipeline {
             }
         }
 
-        stage('Run Docker Container') {
+        stage('DockerHub Login') {
             steps {
                 sh '''
-                docker rm -f $IMAGE_NAME || true
-                docker run -d --name $IMAGE_NAME $IMAGE_NAME
+                echo "$DOCKER_CREDS_PSW" | docker login -u "$DOCKER_CREDS_USR" --password-stdin
                 '''
+            }
+        }
+
+        stage('Push Image to DockerHub') {
+            steps {
+                sh 'docker push $IMAGE_NAME'
             }
         }
     }
