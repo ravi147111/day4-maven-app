@@ -3,7 +3,6 @@ pipeline {
 
     environment {
         IMAGE_NAME = "raviannavarapu/day6-maven-app"
-        DOCKER_CREDS = credentials('dockerhub-creds')
     }
 
     stages {
@@ -27,9 +26,13 @@ pipeline {
 
         stage('DockerHub Login') {
             steps {
-                sh '''
-                echo "$DOCKER_CREDS_PSW" | docker login -u "$DOCKER_CREDS_USR" --password-stdin
-                '''
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-creds',
+                    usernameVariable: 'raviannavarapu',
+                    passwordVariable: 'Ravi1471@'
+                )]) {
+                    sh 'echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin'
+                }
             }
         }
 
@@ -41,11 +44,14 @@ pipeline {
     }
 
     post {
+        always {
+            junit allowEmptyResults: true, testResults: 'target/surefire-reports/*.xml'
+        }
         success {
             archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
         }
-        always {
-            junit 'target/surefire-reports/*.xml'
+        failure {
+            echo 'Pipeline failed'
         }
     }
 }
